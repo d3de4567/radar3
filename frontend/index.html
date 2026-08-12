@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Radar de Ingressos</title>
+<meta name="theme-color" content="#0B0F14" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <h1>Radar de Ingressos</h1>
+    </div>
+    <p class="auth-sub">Fique de olho nos ingressos sem precisar ficar de olho.</p>
+
+    <form id="loginForm" class="auth-form">
+      <label>E-mail
+        <input type="email" id="loginEmail" required autocomplete="username" />
+      </label>
+      <label>Senha
+        <input type="password" id="loginPassword" required autocomplete="current-password" />
+      </label>
+      <div id="authError" class="form-error" hidden></div>
+      <button type="submit" class="btn btn-primary btn-big">Entrar</button>
+    </form>
+
+    <form id="registerForm" class="auth-form" hidden>
+      <label>E-mail
+        <input type="email" id="registerEmail" required autocomplete="username" />
+      </label>
+      <label>Senha (mínimo 6 caracteres)
+        <input type="password" id="registerPassword" required autocomplete="new-password" />
+      </label>
+      <div id="registerError" class="form-error" hidden></div>
+      <button type="submit" class="btn btn-primary btn-big">Criar conta</button>
+    </form>
+
+    <button id="toggleAuthMode" class="link-btn">Ainda não tenho conta — criar agora</button>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div id="appScreen" class="app-screen" hidden>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot" id="globalPulse"></span>
+      <h1>Radar de Ingressos</h1>
+    </div>
+    <div class="topbar-actions">
+      <button id="settingsBtn" class="icon-btn" title="Configurações">⚙️</button>
+      <button id="logoutBtn" class="icon-btn" title="Sair">⎋</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-filter="all">Todos</button>
+    <button class="tab" data-filter="active">Ativos</button>
+    <button class="tab" data-filter="upcoming">Próximos</button>
+    <button class="tab" data-filter="done">Finalizados</button>
+  </nav>
+
+  <main class="content">
+    <div id="emptyState" class="empty-state" hidden>
+      <p class="empty-title">Nenhum evento por aqui ainda</p>
+      <p class="empty-sub">Cadastre o primeiro evento e o radar começa a vigiar por você.</p>
+    </div>
+    <div id="eventList" class="event-grid"></div>
+  </main>
+
+  <button id="newEventFab" class="fab">+ Novo evento</button>
+</div>
+
+<!-- MODAL: NOVO / EDITAR EVENTO -->
+<div id="eventModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="eventModalTitle">Novo evento</h2>
+      <button class="icon-btn" id="closeEventModal">✕</button>
+    </div>
+    <form id="eventForm" class="modal-body">
+      <input type="hidden" id="eventId" />
+
+      <label>Nome do evento
+        <input type="text" id="eventName" placeholder="Ex: Balada X — Edição de Agosto" required />
+      </label>
+
+      <div class="field-row">
+        <label>Data do evento
+          <input type="date" id="eventDate" required />
+        </label>
+        <label>Horário (opcional)
+          <input type="time" id="eventTime" />
+        </label>
+      </div>
+
+      <label>Link da página do evento
+        <input type="url" id="eventUrl" placeholder="https://..." required />
+      </label>
+
+      <label>Verificar a cada
+        <select id="eventInterval">
+          <option value="10">10 segundos</option>
+          <option value="15">15 segundos</option>
+          <option value="20" selected>20 segundos</option>
+          <option value="30">30 segundos</option>
+          <option value="60">60 segundos</option>
+        </select>
+      </label>
+      <p class="field-hint">Intervalos curtos demais podem sobrecarregar o site e fazer com que ele bloqueie o acesso. Por isso o mínimo é 10 segundos.</p>
+
+      <details class="advanced">
+        <summary>Opções avançadas de detecção (opcional)</summary>
+        <label>Palavras que indicam "esgotado" (separadas por vírgula)
+          <input type="text" id="eventSoldOutText" placeholder="esgotado, sold out" />
+        </label>
+        <label>Palavras que indicam "disponível" (separadas por vírgula)
+          <input type="text" id="eventAvailableText" placeholder="comprar ingresso, add to cart" />
+        </label>
+        <p class="field-hint">Deixe em branco para usar a lista padrão. Veja no README como descobrir os textos certos para o seu site.</p>
+      </details>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="eventAutoStart" />
+        Iniciar monitoramento automaticamente ao salvar
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="eventAutoOpen" />
+        Abrir o evento automaticamente quando encontrar disponibilidade
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="eventSoundAlert" checked />
+        Emitir alerta sonoro
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="eventShowNotification" checked />
+        Mostrar notificação no navegador
+      </label>
+
+      <div id="eventFormError" class="form-error" hidden></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="cancelEventForm">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar evento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: CONFIGURAÇÕES -->
+<div id="settingsModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Configurações</h2>
+      <button class="icon-btn" id="closeSettingsModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="field-hint">Conecte o Telegram para receber o alerta mesmo com o app fechado.</p>
+      <ol class="mini-steps">
+        <li>Abra o Telegram e procure por <strong>@userinfobot</strong>, envie qualquer mensagem e copie o número de "Id" que ele responder.</li>
+        <li>Cole esse número abaixo e salve.</li>
+        <li>Depois, procure pelo bot que você criou (veja o README) e envie <strong>/start</strong> para ele.</li>
+      </ol>
+      <label>Seu ID de chat do Telegram
+        <input type="text" id="telegramChatId" placeholder="Ex: 123456789" />
+      </label>
+      <div id="telegramStatus" class="field-hint"></div>
+      <button type="button" class="btn btn-primary" id="saveTelegramBtn">Salvar</button>
+
+      <hr class="divider" />
+
+      <button type="button" class="btn btn-ghost" id="requestNotifBtn">Ativar notificações do navegador</button>
+      <p id="notifStatus" class="field-hint"></p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: HISTÓRICO -->
+<div id="historyModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="historyModalTitle">Histórico</h2>
+      <button class="icon-btn" id="closeHistoryModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <ul id="historyList" class="history-list"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- BANNER DE ALERTA -->
+<div id="alertBanner" class="alert-banner" hidden>
+  <div class="alert-banner-text">
+    <strong>🎟️ INGRESSO DISPONÍVEL!</strong>
+    <span id="alertBannerEvent"></span>
+  </div>
+  <div class="alert-banner-actions">
+    <button id="alertOpenBtn" class="btn btn-primary">Abrir evento</button>
+    <button id="alertDismissBtn" class="icon-btn">✕</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
